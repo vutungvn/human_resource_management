@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # 1. Cơ sở dữ liệu PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: hrm_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 123456password
+      POSTGRES_DB: hrm_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # 2. Công cụ quản lý Database trực quan (Tùy chọn nhưng khuyên dùng)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: hrm_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@hrm.com
+      PGADMIN_DEFAULT_PASSWORD: 123456password
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+
+volumes:
+  # Lưu trữ dữ liệu vật lý để không bị mất khi tắt Docker
+  postgres_data:

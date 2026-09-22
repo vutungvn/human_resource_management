@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ================= ENUMS =================
+enum Role {
+  USER
+  MANAGER
+  HR_MANAGER
+  ADMIN
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  VACATION
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED_BY_MANAGER
+  APPROVED_BY_HR
+  REJECTED
+}
+
+// ================= MODELS =================
+
+model Department {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(100)
+  budget    Decimal  @db.Decimal(12, 2)
+  location  String   @db.VarChar(150)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model JobTitle {
+  id        Int      @id @default(autoincrement())
+  title     String   @unique @db.VarChar(100)
+  salaryMin Decimal  @map("salary_range_min") @db.Decimal(10, 2)
+  salaryMax Decimal? @map("salary_range_max") @db.Decimal(10, 2)
+
+  employees Employee[]
+
+  @@map("job_titles")
+}
+
+model Employee {
+  id           Int            @id @default(autoincrement())
+  firstName    String         @map("first_name") @db.VarChar(50)
+  lastName     String         @map("last_name") @db.VarChar(50)
+  email        String         @unique @db.VarChar(150)
+  password     String         @db.VarChar(255)
+  role         Role
+  departmentId Int            @map("department_id")
+  jobTitleId   Int            @map("job_title_id")
+  managerId    Int?           @map("manager_id")
+  status       EmployeeStatus @default(ACTIVE)
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  // Quan hệ Foreign Keys
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  jobTitle   JobTitle   @relation(fields: [jobTitleId], references: [id], onDelete: Restrict)
+
+  // Quan hệ Self-referencing (Quản lý trực tiếp)
+  manager      Employee?  @relation("ManagerToSubordinates", fields: [managerId], references: [id], onDelete: SetNull)
+  subordinates Employee[] @relation("ManagerToSubordinates")
+
+  // Quan hệ với luồng nghỉ phép
+  leaves              LeaveRequest[] @relation("EmployeeLeaves")
+  approvedLeavesAsMgr LeaveRequest[] @relation("ManagerApprovals")
+  approvedLeavesAsHR  LeaveRequest[] @relation("HRApprovals")
+
+  // Quan hệ với bảng lương
+  payrolls Payroll[]
+
+  @@map("employees")
+}
+
+model LeaveRequest {
+  id                  Int         @id @default(autoincrement())
+  employeeId          Int         @map("employee_id")
+  startDate           DateTime    @map("start_date") @db.Date
+  endDate             DateTime    @map("end_date") @db.Date
+  type                LeaveType
+  status              LeaveStatus @default(PENDING)
+  reason              String?     @db.Text
+  approvedByManagerId Int?        @map("approved_by_manager_id")
+  approvedByHrId      Int?        @map("approved_by_hr_id")
+  // Quan hệ Foreign Keys
+  employee            Employee    @relation("EmployeeLeaves", fields: [employeeId], references: [id], onDelete: Cascade)
+  approvedByManager   Employee?   @relation("ManagerApprovals", fields: [approvedByManagerId], references: [id])
+  approvedByHr        Employee?   @relation("HRApprovals", fields: [approvedByHrId], references: [id])
+
+  @@map("leave_requests")
+}
+
+model Payroll {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int      @map("employee_id")
+  periodStart DateTime @map("period_start") @db.Date
+  periodEnd   DateTime @map("period_end") @db.Date
+  baseSalary  Decimal  @map("base_salary") @db.Decimal(10, 2)
+  netPay      Decimal  @map("net_pay") @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("payrolls")
+}
