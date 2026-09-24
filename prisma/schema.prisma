@@ -39,6 +39,11 @@ enum LeaveStatus {
   REJECTED
 }
 
+enum PayrollStatus {
+  PENDING
+  PAID
+}
+
 // ================= MODELS =================
 
 model Department {
@@ -93,6 +98,9 @@ model Employee {
   // Quan hệ với bảng lương
   payrolls Payroll[]
 
+  // Quan hệ với nhật ký audit (actor thực hiện thay đổi)
+  auditLogs AuditLog[]
+
   @@map("employees")
 }
 
@@ -115,15 +123,37 @@ model LeaveRequest {
 }
 
 model Payroll {
-  id          Int      @id @default(autoincrement())
-  employeeId  Int      @map("employee_id")
-  periodStart DateTime @map("period_start") @db.Date
-  periodEnd   DateTime @map("period_end") @db.Date
-  baseSalary  Decimal  @map("base_salary") @db.Decimal(10, 2)
-  netPay      Decimal  @map("net_pay") @db.Decimal(10, 2)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id             Int           @id @default(autoincrement())
+  employeeId     Int           @map("employee_id")
+  baseSalary     Decimal       @map("base_salary") @db.Decimal(10, 2)
+  bonuses        Decimal       @default(0) @db.Decimal(10, 2)
+  deductions     Decimal       @default(0) @db.Decimal(10, 2)
+  // Cột tính toán tự động ở Postgres (GENERATED ALWAYS AS ... STORED).
+  // Không có @default để Prisma Client không bao giờ ghi giá trị cho cột này.
+  totalSalary    Decimal?      @map("total_salary") @db.Decimal(10, 2)
+  payPeriodStart DateTime      @map("pay_period_start") @db.Date
+  payPeriodEnd   DateTime      @map("pay_period_end") @db.Date
+  status         PayrollStatus @default(PENDING)
+  createdAt      DateTime      @default(now()) @map("created_at")
 
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@map("payrolls")
+}
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  actorId   Int?     @map("actor_id")
+  action    String   @db.VarChar(20)
+  tableName String   @map("table_name") @db.VarChar(50)
+  recordId  Int      @map("record_id")
+  oldValue  Json?    @map("old_value")
+  newValue  Json?    @map("new_value")
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  timestamp DateTime @default(now())
+
+  // actor_id có thể NULL nếu thay đổi do hệ thống tự chạy (không có user context)
+  actor Employee? @relation(fields: [actorId], references: [id])
+
+  @@map("audit_logs")
 }

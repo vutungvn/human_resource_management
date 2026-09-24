@@ -42,3 +42,8 @@ export type LeaveRequest = Prisma.LeaveRequestModel
  * 
  */
 export type Payroll = Prisma.PayrollModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel
