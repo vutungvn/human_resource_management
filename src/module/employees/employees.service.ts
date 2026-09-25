@@ -10,6 +10,7 @@ import { EmployeeStatus } from '../../generated/enums.js';
 import { excludePassword } from './dto/employee-response.dto.js';
 import { QueryEmployeeDto } from './dto/query-employee.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
+import { AuditContext } from '../../common/audit/audit-context.interface.js';
 
 const SALT_ROUNDS = 10;
 
@@ -18,7 +19,7 @@ export class EmployeesService {
   constructor(private readonly prismaService: PrismaService) {}
 
   // Thêm nhân sự
-  async create(createEmployeeDto: CreateEmployeeDto) {
+  async create(createEmployeeDto: CreateEmployeeDto, ctx: AuditContext) {
     const {
       firstName,
       lastName,
@@ -34,19 +35,21 @@ export class EmployeesService {
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     try {
-      const employee = await this.prismaService.employee.create({
-        data: {
-          firstName,
-          lastName,
-          email,
-          password: hashedPassword,
-          role,
-          departmentId,
-          jobTitleId,
-          managerId,
-          status: status ?? EmployeeStatus.ACTIVE,
-        },
-      });
+      const employee = await this.prismaService.withAuditContext(ctx, (tx) =>
+        tx.employee.create({
+          data: {
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            role,
+            departmentId,
+            jobTitleId,
+            managerId,
+            status: status ?? EmployeeStatus.ACTIVE,
+          },
+        }),
+      );
 
       return excludePassword(employee);
     } catch (error) {
@@ -116,7 +119,11 @@ export class EmployeesService {
   }
 
   // Cập nhật nhân sự
-  async update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
+  async update(
+    id: number,
+    updateEmployeeDto: UpdateEmployeeDto,
+    ctx: AuditContext,
+  ) {
     await this.findOne(id);
 
     const data = { ...updateEmployeeDto };
@@ -129,10 +136,12 @@ export class EmployeesService {
     }
 
     try {
-      const employee = await this.prismaService.employee.update({
-        where: { id },
-        data,
-      });
+      const employee = await this.prismaService.withAuditContext(ctx, (tx) =>
+        tx.employee.update({
+          where: { id },
+          data,
+        }),
+      );
 
       return excludePassword(employee);
     } catch (error) {
@@ -144,13 +153,15 @@ export class EmployeesService {
   }
 
   // Xóa nhân sự
-  async remove(id: number) {
+  async remove(id: number, ctx: AuditContext) {
     await this.findOne(id);
 
-    const employee = await this.prismaService.employee.update({
-      where: { id },
-      data: { status: EmployeeStatus.TERMINATED },
-    });
+    const employee = await this.prismaService.withAuditContext(ctx, (tx) =>
+      tx.employee.update({
+        where: { id },
+        data: { status: EmployeeStatus.TERMINATED },
+      }),
+    );
 
     return excludePassword(employee);
   }

@@ -13,6 +13,8 @@ import { EmployeesService } from './employees.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { QueryEmployeeDto } from './dto/query-employee.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
+import { AuditCtx } from '../../common/decorators/audit-context.decorator.js';
+import type { AuditContext } from '../../common/audit/audit-context.interface.js';
 
 @Controller('employees')
 export class EmployeesController {
@@ -20,8 +22,11 @@ export class EmployeesController {
 
   // Thêm nhân sự
   @Post()
-  create(@Body() createEmployeeDto: CreateEmployeeDto) {
-    return this.employeesService.create(createEmployeeDto);
+  create(
+    @Body() createEmployeeDto: CreateEmployeeDto,
+    @AuditCtx() ctx: AuditContext,
+  ) {
+    return this.employeesService.create(createEmployeeDto, ctx);
   }
 
   // Lấy danh sách nhân sự
@@ -41,13 +46,14 @@ export class EmployeesController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateEmployeeDto: UpdateEmployeeDto,
+    @AuditCtx() ctx: AuditContext,
   ) {
-    return this.employeesService.update(id, updateEmployeeDto);
+    return this.employeesService.update(id, updateEmployeeDto, ctx);
   }
 
   // Xóa nhân sự
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.employeesService.remove(id);
+  remove(@Param('id', ParseIntPipe) id: number, @AuditCtx() ctx: AuditContext) {
+    return this.employeesService.remove(id, ctx);
   }
 }
