@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import { EmployeeStatus } from '../../generated/enums.js';
 import { excludePassword } from './dto/employee-response.dto.js';
 import { QueryEmployeeDto } from './dto/query-employee.dto.js';
+import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 
 const SALT_ROUNDS = 10;
 
@@ -112,5 +113,33 @@ export class EmployeesService {
       throw new NotFoundException(`Không tìm thấy nhân viên có ID ${id}`);
     }
     return excludePassword(employee);
+  }
+
+  // Cập nhật nhân sự
+  async update(id: number, updateEmployeeDto: UpdateEmployeeDto) {
+    await this.findOne(id);
+
+    const data = { ...updateEmployeeDto };
+
+    if (updateEmployeeDto.password) {
+      data.password = await bcrypt.hash(
+        updateEmployeeDto.password,
+        SALT_ROUNDS,
+      );
+    }
+
+    try {
+      const employee = await this.prismaService.employee.update({
+        where: { id },
+        data,
+      });
+
+      return excludePassword(employee);
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new ConflictException('Email đã tồn tại trong hệ thống');
+      }
+      throw error;
+    }
   }
 }
