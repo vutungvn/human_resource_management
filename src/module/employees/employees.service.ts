@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import * as bcrypt from 'bcrypt';
@@ -92,5 +96,21 @@ export class EmployeesService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  // Lấy nhân sự theo id
+  async findOne(id: number) {
+    const employee = await this.prismaService.employee.findUnique({
+      where: { id },
+      include: {
+        department: true,
+        jobTitle: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException(`Không tìm thấy nhân viên có ID ${id}`);
+    }
+    return excludePassword(employee);
   }
 }
