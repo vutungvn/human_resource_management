@@ -1,6 +1,7 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { EmployeesService } from './employees.service.js';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
+import { QueryEmployeeDto } from './dto/query-employee.dto.js';
 
 @Controller('employees')
 export class EmployeesController {
@@ -10,5 +11,11 @@ export class EmployeesController {
   @Post()
   create(@Body() createEmployeeDto: CreateEmployeeDto) {
     return this.employeesService.create(createEmployeeDto);
+  }
+
+  // Lấy danh sách nhân sự
+  @Get()
+  findAll(@Query() queryEmployeeDto: QueryEmployeeDto) {
+    return this.employeesService.findAll(queryEmployeeDto);
   }
 }
