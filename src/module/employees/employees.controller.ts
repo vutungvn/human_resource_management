@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -42,5 +43,11 @@ export class EmployeesController {
     @Body() updateEmployeeDto: UpdateEmployeeDto,
   ) {
     return this.employeesService.update(id, updateEmployeeDto);
+  }
+
+  // Xóa nhân sự
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.employeesService.remove(id);
   }
 }

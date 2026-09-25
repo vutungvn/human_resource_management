@@ -142,4 +142,16 @@ export class EmployeesService {
       throw error;
     }
   }
+
+  // Xóa nhân sự
+  async remove(id: number) {
+    await this.findOne(id);
+
+    const employee = await this.prismaService.employee.update({
+      where: { id },
+      data: { status: EmployeeStatus.TERMINATED },
+    });
+
+    return excludePassword(employee);
+  }
 }
