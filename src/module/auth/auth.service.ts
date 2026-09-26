@@ -10,7 +10,6 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
   async register(registerDto: any) {
-    console.log('registerDto:', registerDto);
     try{
 const { email, password, firstName, lastName, role, departmentId, jobTitleId, managerId } = registerDto;
     const existingEmployee = await this.prisma.employee.findUnique({

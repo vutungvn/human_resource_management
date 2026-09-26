@@ -8,7 +8,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  @Roles(Role.ADMIN,Role.HR_MANAGER)
+  @Roles(Role.ADMIN,Role.MANAGER)
   getHello() {
     return this.appService.getHello();
   }

@@ -35,7 +35,7 @@ export class AuthController {
 
     // Chỉ trả về accessToken và thông tin user trong JSON body
     return {
-      access_token: accessToken,
+      accessToken: accessToken,
       user,
     };
   }
