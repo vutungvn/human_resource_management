@@ -1,4 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res, UnauthorizedException,Patch, UseGuards } from '@nestjs/common';
+import {  Param } from '@nestjs/common';
+import { CurrentUser } from './decorators/current-user.decorator.js'
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -75,6 +77,16 @@ export class AuthController {
   console.log('hello');
   return {mes:'hello'};
 }
+
+
+@Roles(Role.MANAGER, Role.HR_MANAGER, Role.ADMIN)
+  @Patch(':id/approve')
+  approveLeave(
+    @Param('id') requestId: number,
+    @CurrentUser() currentUser: { id: number; role: Role },
+  ) {
+    return this.authService.approve(requestId, currentUser);
+  }
 
 }
 

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import * as bcrypt from 'bcrypt';
-import { UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException ,NotFoundException,ForbiddenException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from './decorators/role.enum.js';
 @Injectable()
 export class AuthService {
   constructor(
@@ -101,5 +102,38 @@ const { email, password, firstName, lastName, role, departmentId, jobTitleId, ma
     } catch {
       throw new UnauthorizedException('Refresh Token không hợp lệ hoặc đã hết hạn');
     };
+  }
+
+  async approve(requestId: number, currentUser: { id: number; role: Role }) {
+    // 1. Tìm đơn nghỉ phép kèm thông tin nhân viên nộp đơn
+    const leaveRequest = await this.prisma.leaveRequest.findUnique({
+      where: { id: requestId },
+      include: { employee: true },
+    });
+
+    if (!leaveRequest) {
+      throw new NotFoundException('Không tìm thấy đơn xin nghỉ phép');
+    }
+
+    // 2. Vòng bảo vệ 2 (Resource-level Authorization):
+    // Nếu là MANAGER thường -> BẮT BUỘC nhân viên nộp đơn phải có managerId === id của Manager này
+    if (currentUser.role === Role.MANAGER) {
+      if (leaveRequest.employee.managerId !== currentUser.id) {
+        throw new ForbiddenException(
+          'Bạn chỉ có quyền phê duyệt đơn nghỉ phép của nhân sự cấp dưới do bạn trực tiếp quản lý',
+        );
+      }
+    }
+    if(currentUser.role===Role.HR_MANAGER){
+      return await this.prisma.leaveRequest.update({
+      where: { id: requestId },
+      data: { status: 'APPROVED_BY_HR', approvedById: currentUser.id },
+    });
+    }
+    // HR_MANAGER và ADMIN được quyền duyệt qua cấp
+    return await this.prisma.leaveRequest.update({
+      where: { id: requestId },
+      data: { status: 'APPROVED_BY_MANAGER', approvedById: currentUser.id },
+    });
   }
 }
