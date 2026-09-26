@@ -123,17 +123,25 @@ const { email, password, firstName, lastName, role, departmentId, jobTitleId, ma
           'Bạn chỉ có quyền phê duyệt đơn nghỉ phép của nhân sự cấp dưới do bạn trực tiếp quản lý',
         );
       }
+      return this.prisma.leaveRequest.update({
+        where: { id: requestId },
+        data: {
+          status: 'APPROVED_BY_MANAGER',
+          approvedByManagerId: currentUser.id,
+        },
+      });
     }
-    if(currentUser.role===Role.HR_MANAGER){
-      return await this.prisma.leaveRequest.update({
-      where: { id: requestId },
-      data: { status: 'APPROVED_BY_HR', approvedById: currentUser.id },
-    });
+
+    if (currentUser.role === Role.HR_MANAGER) {
+      return this.prisma.leaveRequest.update({
+        where: { id: requestId },
+        data: {
+          status: 'APPROVED_BY_HR',
+          approvedByHrId: currentUser.id,
+        },
+      });
     }
-    // HR_MANAGER và ADMIN được quyền duyệt qua cấp
-    return await this.prisma.leaveRequest.update({
-      where: { id: requestId },
-      data: { status: 'APPROVED_BY_MANAGER', approvedById: currentUser.id },
-    });
+
+    throw new ForbiddenException('You are not allowed to approve leave requests');
   }
 }

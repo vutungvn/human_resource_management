@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Role } from '../decorators/role.enum.js';
 
 // Interface định nghĩa Payload của JWT Token
 export interface JwtPayload {
   sub: number;
   email: string;
-  role: string;
+  role: Role;
 }
 
 @Injectable()
