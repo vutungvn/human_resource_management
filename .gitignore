@@ -2,6 +2,10 @@
 /dist
 /node_modules
 /build
+*.tsbuildinfo
+
+# local docker override (mỗi máy tự cấu hình port)
+docker-compose.override.yml
 
 # Logs
 logs
