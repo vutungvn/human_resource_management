@@ -8,9 +8,11 @@ import { JwtAuthGuard } from './module/auth/guards/auth.guard.js';
 import { RolesGuard } from './module/auth/guards/roles.guard.js';
 import { EmployeesModule } from './module/employees/employees.module.js';
 import { UserModule } from './module/user/user.module.js';
+import { LeaveRequestsModule } from './module/leave-requests/leave-requests.module.js';
+import { PayrollsModule } from './module/payrolls/payrolls.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule, EmployeesModule, UserModule],
+  imports: [PrismaModule, AuthModule, EmployeesModule, UserModule, LeaveRequestsModule, PayrollsModule],
   controllers: [AppController],
   providers: [
     AppService,
