@@ -2,10 +2,25 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { PrismaModule } from './module/prisma/prisma.module.js';
+import { AuthModule } from './module/auth/auth.module.js';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './module/auth/guards/auth.guard.js';
+import { RolesGuard } from './module/auth/guards/roles.guard.js';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuthModule,
+
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+        {
+      provide: APP_GUARD,
+      useClass:JwtAuthGuard
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}
