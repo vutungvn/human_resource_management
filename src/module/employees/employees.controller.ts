@@ -15,7 +15,10 @@ import { QueryEmployeeDto } from './dto/query-employee.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { AuditCtx } from '../../common/decorators/audit-context.decorator.js';
 import type { AuditContext } from '../../common/audit/audit-context.interface.js';
+import { Roles } from '../auth/decorators/role.decorator.js';
+import { Role } from '../auth/decorators/role.enum.js';
 
+@Roles(Role.ADMIN, Role.HR_MANAGER)
 @Controller('employees')
 export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
