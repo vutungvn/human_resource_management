@@ -8,13 +8,14 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from './decorators/role.enum.js';
+import { AuditContext } from '../../common/audit/audit-context.interface.js';
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
-  async register(registerDto: any) {
+  async register(registerDto: any,ctx:AuditContext) {
     try {
       const {
         email,
@@ -33,8 +34,9 @@ export class AuthService {
         throw new Error('Email này đã được sử dụng trong hệ thống');
       }
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newEmployee = await this.prisma.employee.create({
-        data: {
+      const newEmployee = await this.prisma.withAuditContext(ctx, (tx) =>
+              tx.employee.create({
+                data: {
           firstName,
           lastName,
           email,
@@ -48,7 +50,8 @@ export class AuthService {
           department: true,
           jobTitle: true,
         },
-      });
+              }),
+            );
       const { password: _, ...result } = newEmployee;
 
       return result;

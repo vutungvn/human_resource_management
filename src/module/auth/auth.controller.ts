@@ -10,6 +10,9 @@ import { LoginDto } from './dto/login.dto.js';
 import { Public } from './decorators/public.decorator.js';
 import { Role } from './decorators/role.enum.js';
 import { Roles } from './decorators/role.decorator.js';
+import { AuditCtx } from '../../common/decorators/audit-context.decorator.js';
+import type { AuditContext } from '../../common/audit/audit-context.interface.js';
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -17,8 +20,9 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() registerDto: RegisterDto) {
-    return await this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto,
+ @AuditCtx() ctx: AuditContext) {
+    return await this.authService.register(registerDto,ctx);
   }
   @Public()
   @Post('login')
