@@ -27,7 +27,7 @@ export class PayrollsService {
    *   - base_salary = mức tối thiểu của chức danh (job_title.salary_range_min)
    *   - deductions  = (số ngày nghỉ trong kỳ CHƯA được HR duyệt) × (base_salary / 22)
    *   - total_salary do PostgreSQL tự sinh (GENERATED ALWAYS AS ... STORED)
-   *
+   *    tong lương = lương cơ bản + bonus - deductions
    * Toàn bộ INSERT chạy trong 1 transaction có gắn AuditContext để trigger
    * ghi được actor_id vào audit_logs (SRS 4.5).
    */
