@@ -1,57 +1,69 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import * as bcrypt from 'bcrypt';
-import { UnauthorizedException ,NotFoundException,ForbiddenException} from '@nestjs/common';
+import {
+  UnauthorizedException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from './decorators/role.enum.js';
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
   ) {}
   async register(registerDto: any) {
-    try{
-const { email, password, firstName, lastName, role, departmentId, jobTitleId, managerId } = registerDto;
-    const existingEmployee = await this.prisma.employee.findUnique({
-      where: { email },
-    });
-    if (existingEmployee) {
-      throw new Error('Email này đã được sử dụng trong hệ thống');
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newEmployee = await this.prisma.employee.create({
-      data: {
+    try {
+      const {
+        email,
+        password,
         firstName,
         lastName,
-        email,
-        password: hashedPassword,
-        role: role || 'USER', // Mặc định là USER nếu client không truyền
-        departmentId: departmentId || null,
-        jobTitleId: jobTitleId || null,
-        managerId: managerId || null,
-      },
-      include: {
-        department: true,
-        jobTitle: true,
-      },
-    });
-    const { password: _, ...result } = newEmployee;
+        role,
+        departmentId,
+        jobTitleId,
+        managerId,
+      } = registerDto;
+      const existingEmployee = await this.prisma.employee.findUnique({
+        where: { email },
+      });
+      if (existingEmployee) {
+        throw new Error('Email này đã được sử dụng trong hệ thống');
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newEmployee = await this.prisma.employee.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          password: hashedPassword,
+          role: role || 'USER', // Mặc định là USER nếu client không truyền
+          departmentId: departmentId || null,
+          jobTitleId: jobTitleId || null,
+          managerId: managerId || null,
+        },
+        include: {
+          department: true,
+          jobTitle: true,
+        },
+      });
+      const { password: _, ...result } = newEmployee;
 
-    return result;
-    }
-    catch (error) {
+      return result;
+    } catch (error) {
       console.error('Error occurred while registering user:', error);
       throw new Error('Đã xảy ra lỗi khi đăng ký người dùng');
-      
     }
-    
   }
 
   async login(loginDto: any) {
     const { email, password } = loginDto;
 
-    const employee = await this.prisma.employee.findUnique({ where: { email } });
+    const employee = await this.prisma.employee.findUnique({
+      where: { email },
+    });
     if (!employee) {
       throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
     }
@@ -65,14 +77,18 @@ const { email, password, firstName, lastName, role, departmentId, jobTitleId, ma
       throw new UnauthorizedException('Email hoặc mật khẩu không chính xác');
     }
 
-    const payload = { sub: employee.id, email: employee.email, role: employee.role };
+    const payload = {
+      sub: employee.id,
+      email: employee.email,
+      role: employee.role,
+    };
 
     // 1. Sinh Access Token (Thời hạn 15 phút)
     const accessToken = await this.jwtService.signAsync(payload);
 
     // 2. Sinh Refresh Token (Thời hạn 7 ngày)
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: process.env.refreshTokenSecret|| 'REFRESH_TOKEN_SECRET',
+      secret: process.env.refreshTokenSecret || 'REFRESH_TOKEN_SECRET',
       expiresIn: '7d',
     });
 
@@ -90,18 +106,22 @@ const { email, password, firstName, lastName, role, departmentId, jobTitleId, ma
     try {
       // Xác thực Refresh Token
       const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: process.env.refreshTokenSecret|| 'REFRESH_TOKEN_SECRET',
+        secret: process.env.refreshTokenSecret || 'REFRESH_TOKEN_SECRET',
       });
 
       // Sinh Access Token mới
-      const newAccessToken = await this.jwtService.signAsync(
-        { sub: payload.sub, email: payload.email, role: payload.role }
-      );
+      const newAccessToken = await this.jwtService.signAsync({
+        sub: payload.sub,
+        email: payload.email,
+        role: payload.role,
+      });
 
       return { accessToken: newAccessToken };
     } catch {
-      throw new UnauthorizedException('Refresh Token không hợp lệ hoặc đã hết hạn');
-    };
+      throw new UnauthorizedException(
+        'Refresh Token không hợp lệ hoặc đã hết hạn',
+      );
+    }
   }
 
   async approve(requestId: number, currentUser: { id: number; role: Role }) {
@@ -142,6 +162,8 @@ const { email, password, firstName, lastName, role, departmentId, jobTitleId, ma
       });
     }
 
-    throw new ForbiddenException('You are not allowed to approve leave requests');
+    throw new ForbiddenException(
+      'You are not allowed to approve leave requests',
+    );
   }
 }
