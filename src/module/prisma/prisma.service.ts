@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../../generated/client.js';
+import dotenv from 'dotenv';
 import { AuditContext } from '../../common/audit/audit-context.interface.js';
+
+dotenv.config();
 
 @Injectable()
 export class PrismaService extends PrismaClient {
