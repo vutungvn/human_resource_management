@@ -68,3 +68,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 docs
 
 CLAUDE.md
+
+tsconfig.build.tsbuildinfo

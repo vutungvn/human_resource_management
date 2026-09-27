@@ -1,52 +1,27 @@
-/**
- * JwtAuthGuard — cổng xác thực (Authentication) của hệ thống.
- *
- * Nhiệm vụ: xác định người dùng hiện tại và gắn vào `req.user` theo cấu trúc
- * { id, email, role } để các tầng sau (@CurrentUser, RolesGuard, service) sử dụng.
- *
- * Ghi chú: đây là bản hiện thực tạm phục vụ phát triển và kiểm thử độc lập cho
- * module Nghỉ phép / Tính lương — danh tính được đọc từ header của request. Khi
- * tích hợp module Xác thực, guard này sẽ được thay bằng bản giải mã JWT (Passport).
- */
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import type { Request } from 'express';
-
-export interface AuthUser {
-  id: number;
-  email: string;
-  role: string;
-}
+import { ExecutionContext, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { AuthGuard } from '@nestjs/passport';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator.js';
 
 @Injectable()
-export class JwtAuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
-    const req = context.switchToHttp().getRequest<Request>();
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  constructor(private reflector: Reflector) {
+    super();
+  }
 
-    const rawId = req.headers['x-user-id'];
-    const id = Number(Array.isArray(rawId) ? rawId[0] : rawId);
+  canActivate(context: ExecutionContext) {
+    // 1. Đọc cờ @Public() từ Handler hoặc Controller
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new UnauthorizedException(
-        'Yêu cầu chưa được xác thực (thiếu thông tin người dùng).',
-      );
+    // 2. NẾU CÓ @Public() -> Trả về true NGAY LẬP TỨC để bỏ qua check JWT
+    if (isPublic) {
+      return true;
     }
 
-    const header = (name: string): string | undefined => {
-      const v = req.headers[name];
-      return Array.isArray(v) ? v[0] : v;
-    };
-
-    (req as Request & { user: AuthUser }).user = {
-      id,
-      email: header('x-user-email') ?? `user${id}@hrm.local`,
-      role: header('x-user-role') ?? 'USER',
-    };
-
-    return true;
+    // 3. Nếu không có @Public() -> Mới cho Passport kiểm tra Bearer Token
+    return super.canActivate(context);
   }
 }

@@ -1,5 +1,3 @@
-// Decorator tham số @CurrentUser(): lấy thông tin người dùng hiện tại từ req.user
-// (đã được JwtAuthGuard gắn). Ví dụ @CurrentUser('id') trả về user.id.
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
 export const CurrentUser = createParamDecorator(
